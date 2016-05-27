@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="oclUtil">
+      <UniqueIdentifier>{eb7aa22a-6e45-4cc9-8dd6-b2542ff6ba4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="oglUtil">
+      <UniqueIdentifier>{73d7c1b8-1ac5-4f93-a565-098031f8e7f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3dBasic">
+      <UniqueIdentifier>{61402f8d-a7bc-4867-b0ee-a33ccb3c205d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="oclUtil\oclRely.h">
+      <Filter>oclUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="oclUtil\oclUtil.h">
+      <Filter>oclUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="oglUtil\oglUtil.h">
+      <Filter>oglUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="oglUtil\oglRely.h">
+      <Filter>oglUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="3dBasic\3deRely.h">
+      <Filter>3dBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="3dBasic\3dElement.h">
+      <Filter>3dBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="rely.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="oclUtil\oclUtil.cpp">
+      <Filter>oclUtil</Filter>
+    </ClCompile>
+    <ClCompile Include="oglUtil\oglUtil.cpp">
+      <Filter>oglUtil</Filter>
+    </ClCompile>
+    <ClCompile Include="3dBasic\3dElement.cpp">
+      <Filter>3dBasic</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="basic.vert" />
+    <None Include="test.cl" />
+    <None Include="basic.frag" />
+  </ItemGroup>
+</Project>
