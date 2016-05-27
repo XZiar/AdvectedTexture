@@ -16,10 +16,10 @@ static unique_ptr<oglProgram> glProg;
 static oclCommandQue clComQue;
 static oclPlatfrom clPlat;
 static oclProgram clProg;
-static oclKernel clkGenNoise, clkGenColorful, clkGenStepNoise, clkGenMultiNoise, clkGenMultiNoiseCos;
+static oclKernel clkGenColorful, clkGenStepNoise, clkGenMultiNoise, clkGenNoiseBase, clkGenNoiseMulti;
 
-static oglBuffer glVBOVert, glVBOtex, glVBONtex;
-static oclMem clMemTex, clMemPbo, clMemNPbo;
+static oglBuffer glVBOVert, glVBOtex;
+static oclMem clMemTex, clMemPbo, clMemTmp;
 static shared_ptr<oglVAO> VAO;
 static oglTexture glTex;
 
@@ -86,21 +86,16 @@ void initGL()
 	glProg->use();
 
 	glVBOtex.reset(new _oglBuffer(_oglBuffer::Type::Pixel));
-	glVBONtex.reset(new _oglBuffer(_oglBuffer::Type::Pixel));
 	glTex.reset(new _oglTexture(_oglTexture::Type::Tex2D));
 	float *empty = new float[dim * dim * 8];
-	for (int a = 0; a < dim*dim * 8; a += 4)
-		empty[a] = 1.0f;
+	//for (int a = 0; a < dim*dim * 8; a += 4)
+	//	empty[a] = 1.0f;
 
 	glTex->setProperty(_oglTexture::PropType::Wrap, _oglTexture::PropVal::Clamp,
 		_oglTexture::PropType::Filter, _oglTexture::PropVal::Nearest);
 	glTex->setData(_oglTexture::Format::RGBAf, dim, dim, empty);
-	for (int a = 1; a < dim*dim * 8; a += 4)
-		empty[a] = 1.0f;
-	glTex->setData(_oglTexture::Format::RGBAf, dim, dim, empty);
 
-	glVBOtex->write(empty, dim * dim * 8 * 4, _oglBuffer::DrawMode::DynamicDraw);
-	glVBONtex->write(nullptr, 1920 * 1920 * 4 * 4, _oglBuffer::DrawMode::DynamicDraw);
+	glVBOtex->write(nullptr, 1920 * 1920 * 8 * 4, _oglBuffer::DrawMode::DynamicDraw);
 
 	genScreenBox();
 
@@ -124,25 +119,15 @@ void initCL()
 	{
 		printf("Error:\n%s\n", msg.c_str());
 	}
-	clkGenNoise = oclUtil::getKernel(clProg, "genNoise");
 	clkGenColorful = oclUtil::getKernel(clProg, "genColorful");
 	clkGenStepNoise = oclUtil::getKernel(clProg, "genStepNoise");
 	clkGenMultiNoise = oclUtil::getKernel(clProg, "genMultiNoise");
-	clkGenMultiNoiseCos = oclUtil::getKernel(clProg, "genMultiNoiseCos");
+	clkGenNoiseBase = oclUtil::getKernel(clProg, "genNoiseBase");
+	clkGenNoiseMulti = oclUtil::getKernel(clProg, "genNoiseMulti");
 	printf("Load CL kernel success!\n");
-	float *empty = new float[dim * dim * 8];
-	for (int a = 2; a < dim*dim * 8; a += 4)
-		empty[a] = 1.0f;
-	glTex->setData(_oglTexture::Format::RGBAf, dim, dim, empty);
 
-	//clMemTex = clPlat->createMem(glTex);
-
-	for (int a = 1; a < dim*dim * 8; a += 4)
-		empty[a] = 1.0f;
-	glTex->setData(_oglTexture::Format::RGBAf, dim, dim, empty);
-	delete[] empty;
 	clMemPbo = clPlat->createMem(glVBOtex);
-	clMemNPbo = clPlat->createMem(glVBONtex);
+	clMemTmp = clPlat->createMem(_oclMem::Type::ReadWrite, 1920 * 1920 * 8);
 
 	runCL(clMode);
 }
@@ -150,60 +135,41 @@ void initCL()
 void runCL(const int mode)
 {
 	t_begin = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-	const size_t ws[]{ dim, dim };
-	const size_t wws[]{ cam.width, cam.height };
+	const size_t ws[]{ cam.width, cam.height };
 
+	if (!clMemPbo->lock(clComQue))
+		getchar();
 
-	if (mode < 2)
+	switch(mode)
 	{
-		if (!clMemPbo->lock(clComQue))
-			getchar();
-
-		if (mode == 0)
-		{
-			clkGenColorful->setArg(0, clMemPbo);
-			clkGenColorful->run<2>(clComQue, ws);
-		}
-		else if (mode == 1)
-		{
-			clkGenNoise->setArg(0, clMemPbo);
-			clkGenNoise->run<2>(clComQue, ws);
-		}
-
-		if (!clMemPbo->unlock(clComQue))
-			getchar();
-
-		glTex->setData(_oglTexture::Format::RGBAf, dim, dim, glVBOtex);
+	case 0:
+		clkGenColorful->setArg(0, clMemPbo);
+		clkGenColorful->run<2>(clComQue, ws);
+		break;
+	case 1:
+		clkGenStepNoise->setArg(0, 1);
+		clkGenStepNoise->setArg(1, clMemPbo);
+		clkGenStepNoise->run<2>(clComQue, ws);
+		break;
+	case 2:
+		clkGenNoiseBase->setArg(0, clMemTmp);
+		clkGenNoiseBase->run<2>(clComQue, ws);
+		clkGenNoiseMulti->setArg(0, 6);
+		clkGenNoiseMulti->setArg(1, clMemTmp);
+		clkGenNoiseMulti->setArg(2, clMemPbo);
+		clkGenNoiseMulti->run<2>(clComQue, ws);
+		break;
+	case 3:
+		clkGenMultiNoise->setArg(0, 6);
+		clkGenMultiNoise->setArg(1, clMemPbo);
+		clkGenMultiNoise->run<2>(clComQue, ws);
+		break;
 	}
-	else
-	{
-		if (!clMemNPbo->lock(clComQue))
-			getchar();
 
-		if (mode == 2)
-		{
-			clkGenStepNoise->setArg(0, 6);
-			clkGenStepNoise->setArg(1, clMemNPbo);
-			clkGenStepNoise->run<2>(clComQue, wws);
-		}
-		else if (mode == 3)
-		{
-			clkGenMultiNoise->setArg(0, 6);
-			clkGenMultiNoise->setArg(1, clMemNPbo);
-			clkGenMultiNoise->run<2>(clComQue, wws);
-		}
-		else if (mode == 4)
-		{
-			clkGenMultiNoiseCos->setArg(0, 6);
-			clkGenMultiNoiseCos->setArg(1, clMemNPbo);
-			clkGenMultiNoiseCos->run<2>(clComQue, wws);
-		}
+	if (!clMemPbo->unlock(clComQue))
+		getchar();
 
-		if (!clMemNPbo->unlock(clComQue))
-			getchar();
-
-		glTex->setData(_oglTexture::Format::RGBAf, wws[0], wws[1], glVBONtex);
-	}
+	glTex->setData(_oglTexture::Format::RGBAf, ws[0], ws[1], glVBOtex);
 
 	t_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 	printf("mode %d : running time:%lld\n", mode, t_end - t_begin);
@@ -214,6 +180,7 @@ void display(void)
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	runCL(clMode);
 	VAO->draw(6);
 
 	glutSwapBuffers();
@@ -250,8 +217,8 @@ void onKeyboard(unsigned char key, int x, int y)
 	switch (key)
 	{
 	case 13:
-		clMode = (clMode + 1) % 5;
-		runCL(clMode);
+		clMode = (clMode + 1) % 4;
+		//runCL(clMode);
 		break;
 	default:
 		break;

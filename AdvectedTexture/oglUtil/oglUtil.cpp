@@ -232,7 +232,6 @@ void _oglTexture::setData(const Format format, const GLsizei w, const GLsizei h,
 	GLenum datatype, comptype;
 	parseFormat(format, intertype, datatype, comptype);
 	glTexImage2D((GLenum)type, 0, intertype, w, h, 0, comptype, datatype, data);
-	printf("res on tex write:%s\n", gluErrorString(glGetError()));
 	//glBindTexture((GLenum)type, 0);
 }
 
@@ -247,7 +246,6 @@ void _oglTexture::setData(const Format format, const GLsizei w, const GLsizei h,
 	glTexImage2D((GLenum)type, 0, intertype, w, h, 0, comptype, datatype, NULL);
 
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-	printf("res on tex write b:%s\n", gluErrorString(glGetError()));
 	//glBindTexture((GLenum)type, 0);
 }
 
